@@ -1,0 +1,41 @@
+# Especifica la versión de la sintaxis de Docker Compose que estamos usando. 3.8 es una versión moderna y estable.
+version: '3.8'
+
+# 'services' es el corazón del archivo. Aquí definimos cada uno de nuestros contenedores.
+services:
+  
+  # Este es nuestro primer servicio: la aplicación web. Lo llamamos 'webapp'.
+  webapp:
+    # 'build: .' le dice a Compose: "Construye la imagen para este servicio usando el Dockerfile que se encuentra en la carpeta actual (.)".
+    build: .
+    # 'ports' mapea los puertos. Es lo mismo que la bandera -p que usábamos.
+    # Mapea el puerto 8080 del host (el Codespace) al puerto 8080 del contenedor.
+    ports:
+      - "8080:8080"
+    # 'environment' nos permite pasar variables de entorno, igual que la bandera -e.
+    # Aquí definimos la cadena de conexión que nuestra app .NET usará.
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=MiAppDB;User Id=sa;Password=Password123;TrustServerCertificate=True
+    # 'depends_on' es muy importante. Le dice a Compose: "No intentes iniciar este servicio 'webapp' HASTA que el servicio 'db' esté listo y corriendo".
+    # Esto evita errores de conexión al arrancar.
+    depends_on:
+      - db
+
+  # Este es nuestro segundo servicio: la base de datos. Lo llamamos 'db'.
+  db:
+    # 'image' le dice a Compose: "No construyas nada, simplemente usa esta imagen oficial que ya existe".
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    # Aquí definimos las variables de entorno para SQL Server, igual que antes.
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Admin123
+    # 'volumes' le dice a Compose que conecte un volumen. Es lo mismo que la bandera -v.
+    # Conecta el volumen 'sql_data' a la carpeta de datos del contenedor.
+    volumes:
+      - sql_data:/var/opt/mssql
+
+# En esta sección final, declaramos formalmente los volúmenes que nuestra aplicación necesita.
+# Esto le permite a Compose gestionarlos por nosotros.
+volumes:
+  # Declaramos nuestro volumen 'sql_data'. Al estar aquí, Docker sabe que es un recurso importante del proyecto.
+  sql_data:
